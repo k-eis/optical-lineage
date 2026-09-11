@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optical Lineage — k-eis</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  /* 真鍮×黒×精密機械。ライカの機体そのものを思わせる配色 */
+  --bg: #14120f;
+  --ink: #f0ebe0;
+  --line: #2b2620;
+  --line-strong: #453d30;
+  --accent: #c9a05a;
+  --accent2: #8f7a52;
+  --muted: #6b6252;
+  --canvas-check-a: #1a1712;
+  --canvas-check-b: #14120f;
+  --mono: 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); min-height: 100vh; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 40px 32px 80px; }
+
+header { border-bottom: 1px solid var(--line-strong); padding-bottom: 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+.filter-tag { font: 600 10px/1 var(--mono); color: var(--accent); letter-spacing: 0.16em; margin-bottom: 10px; }
+h1 { font: 300 32px/1.1 var(--sans); letter-spacing: -0.01em; }
+h1 .jp { font-size: 15px; color: var(--muted); font-weight: 400; margin-left: 10px; }
+.tagline { font: 400 12px/1.6 var(--sans); color: var(--muted); margin-top: 6px; }
+.private-badge { font: 700 9px/1 var(--mono); color: var(--accent); letter-spacing: 0.08em; margin-top: 8px; border: 1px dashed var(--accent); display: inline-block; padding: 3px 7px; }
+.version { font: 400 9px/1 var(--mono); color: var(--muted); letter-spacing: 0.1em; text-align: right; }
+
+.stage { display: grid; grid-template-columns: 1fr 300px; gap: 0; border: 1px solid var(--line-strong); }
+
+.canvas-area {
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  background:
+    linear-gradient(45deg, var(--canvas-check-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--canvas-check-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--canvas-check-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--canvas-check-a) 75%);
+  background-color: var(--canvas-check-b);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  border-right: 1px solid var(--line-strong);
+  min-height: 480px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+#dropZone { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; cursor: pointer; transition: background 0.15s; }
+#dropZone.drag-over { background: rgba(201,160,90,0.08); }
+#dropZone .icon { width: 40px; height: 40px; border: 1.5px solid var(--line-strong); border-radius: 50%; position: relative; }
+#dropZone .icon::before { content:''; position:absolute; left:50%; top:50%; width:14px; height:14px; border-radius:50%; background: var(--line-strong); transform: translate(-50%,-50%); opacity:0.5; }
+#dropZone .label-main { font: 500 12px/1 var(--sans); color: var(--ink); text-align: center; }
+#dropZone .label-sub { font: 400 9px/1 var(--mono); color: var(--muted); letter-spacing: 0.08em; }
+#fileInput { display: none; }
+
+canvas#outputCanvas { max-width: 100%; max-height: 640px; display: none; }
+.canvas-badge { position: absolute; top: 14px; left: 14px; font: 500 9px/1 var(--mono); color: #f0ede0; background: rgba(0,0,0,0.5); padding: 4px 8px; border: 1px solid rgba(255,255,255,0.15); letter-spacing: 0.08em; display: none; }
+
+.controls { background: var(--bg); padding: 22px 20px; display: flex; flex-direction: column; gap: 0; }
+.ctrl-group { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.ctrl-group:first-child { padding-top: 0; }
+.ctrl-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.ctrl-label .name { font: 500 10px/1 var(--sans); color: var(--ink); letter-spacing: 0.02em; }
+.ctrl-label .name .jp-small { font-size: 9px; color: var(--muted); margin-left: 4px; }
+.ctrl-label .val { font: 500 10px/1 var(--mono); color: var(--accent); }
+.axis-note { font: 400 9px/1.5 var(--sans); color: var(--muted); margin: -4px 0 10px; }
+
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 3px; background: var(--line-strong); outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; transition: transform 0.1s; }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
+
+.checkbox-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.checkbox-row label { font: 500 10px/1 var(--sans); color: var(--ink); cursor: pointer; }
+.checkbox-row input { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+
+.action-buttons { display: flex; gap: 8px; }
+.btn { flex: 1; padding: 12px; border: 1px solid var(--accent); background: var(--accent); color: #14120f; font: 600 11px/1 var(--sans); letter-spacing: 0.04em; cursor: pointer; }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn.secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+
+.select-grid { display: grid; gap: 6px; }
+.select-btn { border: 1px solid var(--line-strong); padding: 8px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: all 0.12s; }
+.select-btn:hover { border-color: var(--accent); }
+.select-btn.active { background: var(--accent); border-color: var(--accent); }
+.select-btn.active .select-name, .select-btn.active .select-desc { color: #14120f; }
+.select-name { font: 600 10.5px/1.2 var(--sans); color: var(--ink); }
+.select-desc { font: 400 8.5px/1.2 var(--sans); color: var(--muted); margin-top: 2px; }
+
+@media (max-width: 860px) {
+  .wrap { padding: 20px 16px 50px; }
+  header { flex-direction: column; align-items: flex-start; gap: 10px; padding-bottom: 16px; margin-bottom: 20px; }
+  h1 { font-size: 24px; }
+  h1 .jp { display: block; margin-left: 0; margin-top: 4px; }
+  .stage { grid-template-columns: 1fr; border: none; }
+  .canvas-area { border: 1px solid var(--line-strong); border-bottom: none; min-height: 220px; top: 0; z-index: 20; }
+  canvas#outputCanvas { max-height: 42vh; }
+  .controls { border: 1px solid var(--line-strong); border-top: none; padding: 18px 16px; }
+  input[type="range"] { height: 4px; margin: 8px 0; }
+  input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; }
+  input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
+  .btn { padding: 16px; font-size: 12px; }
+  .select-grid { grid-template-columns: 1fr 1fr !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="filter-tag">k-eis DESIGN FILTER 00-γ</div>
+      <h1>Optical Lineage <span class="jp">光学の血統</span></h1>
+      <div class="tagline">Body, lens, and film — three independent lineages of a single mount.</div>
+      <div class="tagline" style="margin-top:2px; opacity:0.85;">ボディ・レンズ・フィルム——同じマウントに受け継がれる、3つの独立した系譜。</div>
+      <div class="private-badge">PERSONAL / UNLISTED</div>
+    </div>
+    <div class="version">© 2026 k-eis studio</div>
+  </header>
+
+  <div class="stage">
+    <div class="canvas-area">
+      <div id="dropZone">
+        <div class="icon"></div>
+        <div class="label-main">Drop image, or click to select<br><span style="font-size:10px; opacity:0.6;">画像をドロップ、またはクリックして選択</span></div>
+        <div class="label-sub">PNG / JPEG SUPPORTED</div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+      <div class="canvas-badge" id="canvasBadge">PREVIEW</div>
+      <canvas id="outputCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span class="name">BODY <span class="jp-small">センサー・機体の個性</span></span></div>
+        <div class="select-grid" id="bodyGrid" style="grid-template-columns: 1fr 1fr;">
+          <div class="select-btn active" data-body="none"><span class="select-name">Original</span></div>
+          <div class="select-btn" data-body="m3"><span class="select-name">M3</span><span class="select-desc">1954・最高精度の距離計</span></div>
+          <div class="select-btn" data-body="m6"><span class="select-name">M6</span><span class="select-desc">1984・機械式+TTL露出計</span></div>
+          <div class="select-btn" data-body="m8"><span class="select-name">M8</span><span class="select-desc">Kodak CCD・IR感度</span></div>
+          <div class="select-btn" data-body="m9"><span class="select-name">M9</span><span class="select-desc">フルサイズCCD・濃密</span></div>
+          <div class="select-btn" data-body="m10"><span class="select-name">M10</span><span class="select-desc">現代CMOS・クリーン</span></div>
+          <div class="select-btn" data-body="mmono"><span class="select-name">M Mono</span><span class="select-desc">専用白黒センサー</span></div>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span class="name">LENS <span class="jp-small">光学的な描写</span></span></div>
+        <div class="select-grid" id="lensGrid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="select-btn active" data-lens="none"><span class="select-name">Original</span></div>
+          <div class="select-btn" data-lens="summiluxsoft"><span class="select-name">Summilux Soft</span></div>
+          <div class="select-btn" data-lens="summicron"><span class="select-name">Summicron</span></div>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span class="name">FILM <span class="jp-small">フィルム乳剤の個性</span></span></div>
+        <div class="axis-note">BODYがフィルム機（M3・M6）の時だけ意味を持ちます</div>
+        <div class="select-grid" id="filmGrid" style="grid-template-columns: 1fr 1fr;">
+          <div class="select-btn active" data-film="none"><span class="select-name">None</span></div>
+          <div class="select-btn" data-film="triX400"><span class="select-name">Tri-X 400</span></div>
+          <div class="select-btn" data-film="hp5Plus"><span class="select-name">HP5 Plus</span></div>
+          <div class="select-btn" data-film="delta100"><span class="select-name">Delta 100</span></div>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">COLOR SCIENCE <span class="jp-small">センサーの色の濃さ</span></span>
+          <span class="val" id="colorScienceVal">0%</span>
+        </div>
+        <input type="range" id="colorScience" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">SHADOW TINT <span class="jp-small">暗部の色転び</span></span>
+          <span class="val" id="shadowTintVal">0%</span>
+        </div>
+        <input type="range" id="shadowTint" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">TONE ROLLOFF <span class="jp-small">黒とハイライトの粘り</span></span>
+          <span class="val" id="toneRolloffVal">0%</span>
+        </div>
+        <input type="range" id="toneRolloff" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">COLOR TEMP <span class="jp-small">色温度</span></span>
+          <span class="val" id="colorTempVal">中間</span>
+        </div>
+        <input type="range" id="colorTemp" min="0" max="100" value="50">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">SATURATION <span class="jp-small">彩度</span></span>
+          <span class="val" id="saturationVal">中間</span>
+        </div>
+        <input type="range" id="saturation" min="0" max="100" value="50">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">DETAIL <span class="jp-small">解像感（センサー・焦点精度）</span></span>
+          <span class="val" id="detailVal">0%</span>
+        </div>
+        <input type="range" id="detail" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">GRAIN <span class="jp-small">粒状感（センサーノイズ／フィルム粒子）</span></span>
+          <span class="val" id="grainVal">0%</span>
+        </div>
+        <input type="range" id="grain" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">LIGHT LEAK <span class="jp-small">光線引き込み（フィルムのみ）</span></span>
+          <span class="val" id="lightLeakVal">0%</span>
+        </div>
+        <input type="range" id="lightLeak" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">MICRO CONTRAST <span class="jp-small">レンズの立体感</span></span>
+          <span class="val" id="microContrastVal">0%</span>
+        </div>
+        <input type="range" id="microContrast" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">GLOW <span class="jp-small">開放時のグロウ</span></span>
+          <span class="val" id="glowVal">0%</span>
+        </div>
+        <input type="range" id="glow" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">VIGNETTE <span class="jp-small">光学的な周辺減光</span></span>
+          <span class="val" id="vignetteVal">0%</span>
+        </div>
+        <input type="range" id="vignette" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">FIELD BLUR <span class="jp-small">像面の流れ</span></span>
+          <span class="val" id="fieldBlurVal">0%</span>
+        </div>
+        <input type="range" id="fieldBlur" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span class="name">SOFT FOCUS <span class="jp-small">開放時の全体的な柔らかさ</span></span>
+          <span class="val" id="softFocusVal">0%</span>
+        </div>
+        <input type="range" id="softFocus" min="0" max="100" value="0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="checkbox-row">
+          <input type="checkbox" id="monochrome">
+          <label for="monochrome">MONOCHROME <span style="opacity:0.6;font-weight:400;">/ M Monochrom風</span></label>
+        </div>
+      </div>
+
+      <div class="ctrl-group" style="border-bottom:none;">
+        <div class="action-buttons">
+          <button class="btn" id="downloadBtn" disabled>SAVE AS PNG</button>
+          <button class="btn secondary" id="resetBtn" disabled>RESET IMAGE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="optical-lineage.js"></script>
+</body>
+</html>
