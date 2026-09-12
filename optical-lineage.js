@@ -568,17 +568,52 @@ monochromeCheckbox.addEventListener('change', requestApply);
 
 // ── 保存・リセット
 downloadBtn.addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = 'optical-lineage.png';
-  link.href = outputCanvas.toDataURL('image/png');
-  link.click();
+  try {
+    const dataUrl = outputCanvas.toDataURL('image/png');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      showSaveOverlay(dataUrl);
+    } else {
+      const link = document.createElement('a');
+      link.download = 'optical-lineage.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  } catch (err) {
+    console.error('PNG保存に失敗しました:', err);
+    alert('画像の保存に失敗しました。ブラウザを再読み込みしてもう一度お試しください。');
+  }
 });
 
+function showSaveOverlay(dataUrl) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position: fixed; inset: 0; z-index: 9999; background: rgba(10,10,10,0.96);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;`;
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.style.cssText = 'max-width: 100%; max-height: 75vh; border-radius: 2px;';
+  const hint = document.createElement('p');
+  hint.innerHTML = '画像を長押しして「写真に保存」を選んでください<br><span style="color:#888; font-size:11px;">Press and hold the image, then tap "Save to Photos"</span>';
+  hint.style.cssText = 'color: #ccc; font-family: sans-serif; font-size: 13px; margin-top: 16px; text-align: center; line-height: 1.6;';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '閉じる / Close';
+  closeBtn.style.cssText = `margin-top: 20px; padding: 10px 24px; background: transparent; color: white; border: 1px solid #666; border-radius: 2px; font-family: sans-serif; font-size: 13px; cursor: pointer;`;
+  closeBtn.addEventListener('click', () => overlay.remove());
+  overlay.appendChild(img); overlay.appendChild(hint); overlay.appendChild(closeBtn);
+  document.body.appendChild(overlay);
+}
+
 resetBtn.addEventListener('click', () => {
-  bodyBtns.forEach(b => b.classList.toggle('active', b.dataset.body === 'none'));
-  lensBtns.forEach(b => b.classList.toggle('active', b.dataset.lens === 'none'));
-  filmBtns.forEach(b => b.classList.toggle('active', b.dataset.film === 'none'));
-  applyBody('none');
-  applyLens('none');
-  applyFilm('none');
+  originalImage = null;
+  originalImageData = null;
+  previewImageData = null;
+  outputCanvas.style.display = 'none';
+  canvasBadge.style.display = 'none';
+  dropZone.style.display = 'flex';
+  downloadBtn.disabled = true;
+  resetBtn.disabled = true;
+  fileInput.value = '';
 });
