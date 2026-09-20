@@ -447,7 +447,12 @@ const FILMS = {
   // Ilford HP5 Plus：Tri-Xより柔らかく控えめ
   hp5Plus: { toneRolloff:30, grain:35, lightLeak:0 },
   // Ilford Delta 100：極めて微粒子・高解像でクリーン
-  delta100: { toneRolloff:10, grain:12, lightLeak:0 }
+  delta100: { toneRolloff:10, grain:12, lightLeak:0 },
+  // Kodak Gold 200：唯一のカラーネガフィルム。暖色（黄・橙・赤）が持ち上がり、
+  // 黒は完全な黒にならず少し浮いた茶色がかった黒に。ISO200の割に粒は目立ち、
+  // コントラストは穏やかでなだらかな階調。colorTemp/saturationを持つのはこのパッチだけ
+  // （モノクロフィルムはBODY側の色設定に触れないのと対称的に、これはBODY側の色設定を上書きする）
+  goldColor: { toneRolloff:35, grain:32, lightLeak:0, colorTemp:63, saturation:60 }
 };
 
 function setSlider(slider, valEl, value, suffix) {
@@ -496,6 +501,16 @@ function applyFilm(key) {
   setSlider(toneRolloffSlider, toneRolloffVal, f.toneRolloff);
   setSlider(grainSlider, grainVal, f.grain);
   setSlider(lightLeakSlider, lightLeakVal, f.lightLeak);
+
+  // Color negative stocks (currently only OL-F200) carry their own color cast —
+  // unlike the monochrome stocks, which never touch these and leave whatever
+  // the BODY set in place
+  if (f.colorTemp !== undefined) {
+    setSlider(colorTempSlider, colorTempVal, f.colorTemp, f.colorTemp===50?'中間':(f.colorTemp<50?`-${50-f.colorTemp}`:`+${f.colorTemp-50}`));
+  }
+  if (f.saturation !== undefined) {
+    setSlider(saturationSlider, saturationVal, f.saturation, f.saturation===50?'中間':(f.saturation<50?`-${50-f.saturation}`:`+${f.saturation-50}`));
+  }
 
   requestApply();
 }
