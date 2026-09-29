@@ -447,7 +447,12 @@ const FILMS = {
   // Ilford HP5 Plus：Tri-Xより柔らかく控えめ
   hp5Plus: { toneRolloff:30, grain:35, lightLeak:0 },
   // Ilford Delta 100：極めて微粒子・高解像でクリーン
-  delta100: { toneRolloff:10, grain:12, lightLeak:0 }
+  delta100: { toneRolloff:10, grain:12, lightLeak:0 },
+  // Kodak Gold 200：唯一のカラーネガフィルム。暖色（黄・橙・赤）が持ち上がり、
+  // 黒は完全な黒にならず少し浮いた茶色がかった黒に。ISO200の割に粒は目立ち、
+  // コントラストは穏やかでなだらかな階調。colorTemp/saturationを持つのはこのパッチだけ
+  // （モノクロフィルムはBODY側の色設定に触れないのと対称的に、これはBODY側の色設定を上書きする）
+  goldColor: { toneRolloff:35, grain:32, lightLeak:0, colorTemp:63, saturation:60 }
 };
 
 function setSlider(slider, valEl, value, suffix) {
@@ -496,6 +501,16 @@ function applyFilm(key) {
   setSlider(toneRolloffSlider, toneRolloffVal, f.toneRolloff);
   setSlider(grainSlider, grainVal, f.grain);
   setSlider(lightLeakSlider, lightLeakVal, f.lightLeak);
+
+  // Color negative stocks (currently only OL-F200) carry their own color cast —
+  // unlike the monochrome stocks, which never touch these and leave whatever
+  // the BODY set in place
+  if (f.colorTemp !== undefined) {
+    setSlider(colorTempSlider, colorTempVal, f.colorTemp, f.colorTemp===50?'中間':(f.colorTemp<50?`-${50-f.colorTemp}`:`+${f.colorTemp-50}`));
+  }
+  if (f.saturation !== undefined) {
+    setSlider(saturationSlider, saturationVal, f.saturation, f.saturation===50?'中間':(f.saturation<50?`-${50-f.saturation}`:`+${f.saturation-50}`));
+  }
 
   requestApply();
 }
@@ -568,17 +583,52 @@ monochromeCheckbox.addEventListener('change', requestApply);
 
 // ── 保存・リセット
 downloadBtn.addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = 'optical-lineage.png';
-  link.href = outputCanvas.toDataURL('image/png');
-  link.click();
+  try {
+    const dataUrl = outputCanvas.toDataURL('image/png');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      showSaveOverlay(dataUrl);
+    } else {
+      const link = document.createElement('a');
+      link.download = 'optical-lineage.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  } catch (err) {
+    console.error('PNG保存に失敗しました:', err);
+    alert('画像の保存に失敗しました。ブラウザを再読み込みしてもう一度お試しください。');
+  }
 });
 
+function showSaveOverlay(dataUrl) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position: fixed; inset: 0; z-index: 9999; background: rgba(10,10,10,0.96);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;`;
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.style.cssText = 'max-width: 100%; max-height: 75vh; border-radius: 2px;';
+  const hint = document.createElement('p');
+  hint.innerHTML = '画像を長押しして「写真に保存」を選んでください<br><span style="color:#888; font-size:11px;">Press and hold the image, then tap "Save to Photos"</span>';
+  hint.style.cssText = 'color: #ccc; font-family: sans-serif; font-size: 13px; margin-top: 16px; text-align: center; line-height: 1.6;';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '閉じる / Close';
+  closeBtn.style.cssText = `margin-top: 20px; padding: 10px 24px; background: transparent; color: white; border: 1px solid #666; border-radius: 2px; font-family: sans-serif; font-size: 13px; cursor: pointer;`;
+  closeBtn.addEventListener('click', () => overlay.remove());
+  overlay.appendChild(img); overlay.appendChild(hint); overlay.appendChild(closeBtn);
+  document.body.appendChild(overlay);
+}
+
 resetBtn.addEventListener('click', () => {
-  bodyBtns.forEach(b => b.classList.toggle('active', b.dataset.body === 'none'));
-  lensBtns.forEach(b => b.classList.toggle('active', b.dataset.lens === 'none'));
-  filmBtns.forEach(b => b.classList.toggle('active', b.dataset.film === 'none'));
-  applyBody('none');
-  applyLens('none');
-  applyFilm('none');
+  originalImage = null;
+  originalImageData = null;
+  previewImageData = null;
+  outputCanvas.style.display = 'none';
+  canvasBadge.style.display = 'none';
+  dropZone.style.display = 'flex';
+  downloadBtn.disabled = true;
+  resetBtn.disabled = true;
+  fileInput.value = '';
 });

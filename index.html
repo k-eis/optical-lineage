@@ -2,8 +2,16 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Optical Lineage — k-eis</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14120f">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Optical Lineage">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -52,7 +60,6 @@ h1 .jp { font-size: 15px; color: var(--muted); font-weight: 400; margin-left: 10
   min-height: 480px;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  position: relative;
 }
 
 #dropZone { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; cursor: pointer; transition: background 0.15s; }
@@ -144,12 +151,12 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
         <div class="ctrl-label"><span class="name">BODY <span class="jp-small">センサー・機体の個性</span></span></div>
         <div class="select-grid" id="bodyGrid" style="grid-template-columns: 1fr 1fr;">
           <div class="select-btn active" data-body="none"><span class="select-name">Original</span></div>
-          <div class="select-btn" data-body="m3"><span class="select-name">M3</span><span class="select-desc">1954・最高精度の距離計</span></div>
-          <div class="select-btn" data-body="m6"><span class="select-name">M6</span><span class="select-desc">1984・機械式+TTL露出計</span></div>
-          <div class="select-btn" data-body="m8"><span class="select-name">M8</span><span class="select-desc">Kodak CCD・IR感度</span></div>
-          <div class="select-btn" data-body="m9"><span class="select-name">M9</span><span class="select-desc">フルサイズCCD・濃密</span></div>
-          <div class="select-btn" data-body="m10"><span class="select-name">M10</span><span class="select-desc">現代CMOS・クリーン</span></div>
-          <div class="select-btn" data-body="mmono"><span class="select-name">M Mono</span><span class="select-desc">専用白黒センサー</span></div>
+          <div class="select-btn" data-body="m3"><span class="select-name">OL-03</span><span class="select-desc">1954・最高精度の距離計</span></div>
+          <div class="select-btn" data-body="m6"><span class="select-name">OL-06</span><span class="select-desc">1984・機械式+TTL露出計</span></div>
+          <div class="select-btn" data-body="m8"><span class="select-name">OL-08</span><span class="select-desc">CCDセンサー・IR感度</span></div>
+          <div class="select-btn" data-body="m9"><span class="select-name">OL-09</span><span class="select-desc">フルサイズCCD・濃密</span></div>
+          <div class="select-btn" data-body="m10"><span class="select-name">OL-10</span><span class="select-desc">現代CMOS・クリーン</span></div>
+          <div class="select-btn" data-body="mmono"><span class="select-name">OL-M</span><span class="select-desc">専用白黒センサー</span></div>
         </div>
       </div>
 
@@ -157,19 +164,20 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
         <div class="ctrl-label"><span class="name">LENS <span class="jp-small">光学的な描写</span></span></div>
         <div class="select-grid" id="lensGrid" style="grid-template-columns: 1fr 1fr 1fr;">
           <div class="select-btn active" data-lens="none"><span class="select-name">Original</span></div>
-          <div class="select-btn" data-lens="summiluxsoft"><span class="select-name">Summilux Soft</span></div>
-          <div class="select-btn" data-lens="summicron"><span class="select-name">Summicron</span></div>
+          <div class="select-btn" data-lens="summiluxsoft"><span class="select-name">OL-Soft</span></div>
+          <div class="select-btn" data-lens="summicron"><span class="select-name">OL-Sharp</span></div>
         </div>
       </div>
 
       <div class="ctrl-group">
         <div class="ctrl-label"><span class="name">FILM <span class="jp-small">フィルム乳剤の個性</span></span></div>
-        <div class="axis-note">BODYがフィルム機（M3・M6）の時だけ意味を持ちます</div>
-        <div class="select-grid" id="filmGrid" style="grid-template-columns: 1fr 1fr;">
+        <div class="axis-note">BODYがフィルム機（OL-03・OL-06）の時だけ意味を持ちます</div>
+        <div class="select-grid" id="filmGrid" style="grid-template-columns: 1fr 1fr 1fr;">
           <div class="select-btn active" data-film="none"><span class="select-name">None</span></div>
-          <div class="select-btn" data-film="triX400"><span class="select-name">Tri-X 400</span></div>
-          <div class="select-btn" data-film="hp5Plus"><span class="select-name">HP5 Plus</span></div>
-          <div class="select-btn" data-film="delta100"><span class="select-name">Delta 100</span></div>
+          <div class="select-btn" data-film="triX400"><span class="select-name">OL-F400</span></div>
+          <div class="select-btn" data-film="hp5Plus"><span class="select-name">OL-F5</span></div>
+          <div class="select-btn" data-film="delta100"><span class="select-name">OL-F100</span></div>
+          <div class="select-btn" data-film="goldColor"><span class="select-name">OL-F200</span></div>
         </div>
       </div>
 
@@ -280,7 +288,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
       <div class="ctrl-group">
         <div class="checkbox-row">
           <input type="checkbox" id="monochrome">
-          <label for="monochrome">MONOCHROME <span style="opacity:0.6;font-weight:400;">/ M Monochrom風</span></label>
+          <label for="monochrome">MONOCHROME <span style="opacity:0.6;font-weight:400;">/ OL-M風</span></label>
         </div>
       </div>
 
@@ -295,5 +303,15 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 </div>
 
 <script src="optical-lineage.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {
+        // PWA install/offline support just won't be available this session — the
+        // app itself still works fine as a normal page.
+      });
+    });
+  }
+</script>
 </body>
 </html>
